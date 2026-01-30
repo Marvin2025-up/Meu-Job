@@ -140,15 +140,16 @@ if (!Session::isAdmin()) { header('Location: ../login.php'); exit; }
 <div id="cadastro_aluno" class="content-section">
     <div class="form-container">
         
-        <a href="" class="exit-top">
-            <i class="fas fa-sign-out-alt"></i> Sair
-        </a>
+<a href="../../controller/logout.php" class="exit-top">
+    <i class="fas fa-sign-out-alt"></i> Sair
+</a>
+
 
         <h2 style="margin-bottom: 25px; color: var(--cor-primaria);">
             <i class="fas fa-user-plus"></i> Cadastro de Formador
         </h2>
 
-        <form action="../../controller/formadorController.php?action=store" method="POST">
+        <form action="../../controller/FormadorController.php?action=store" method="POST">
             <div class="form-grid">
                 <div class="form-group">
                     <label>Nome Completo</label>

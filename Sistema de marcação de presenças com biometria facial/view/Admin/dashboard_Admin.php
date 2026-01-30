@@ -222,7 +222,8 @@ $email = Session::get('email', 'Admin');
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="color: var(--cor-primaria);"><i class="fas fa-user-graduate"></i> Lista de Formandos</h2>
 
-                    <a href="../../view/Formando/criar_formando.php"><button style="background: var(--cor-sucesso); color: white; border:none; padding: 10px 20px; border-radius: 25px; cursor: pointer;">+ Novo Formando</button></a>
+                    <a href="/Meu-Job/Sistema de marcação de presenças com biometria facial/controller/FormandoController.php?action=create">
+<button style="background: var(--cor-sucesso); color: white; border:none; padding: 10px 20px; border-radius: 25px; cursor: pointer;">+ Novo Formando</button></a>
                 </div>
                 <table>
                     <thead>

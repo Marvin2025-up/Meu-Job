@@ -1,10 +1,10 @@
-<?php 
-require_once __DIR__ . '/../core/conexao.php';
-require_once __DIR__ . '/../core/session.php';
+<?php
+require_once __DIR__ . '/../core/Conexao.php';
+require_once __DIR__ . '/../core/Session.php';
+
 Session::start();
 
-// Proteção de rota: apenas administradores
-if (Session::get('tipo') !== 'administrador'){
+if (!Session::isAdmin()) {
     header('Location: ../view/login.php');
     exit;
 }
@@ -13,93 +13,48 @@ $action = $_GET['action'] ?? 'index';
 
 class FormandoController
 {
-    // Listar todos os formandos
-    public static function index(){
+    // LISTAR
+    public static function index()
+    {
         $con = Conexao::ligar();
-        $sql = "SELECT * FROM formando ORDER BY id_formando ASC";
+        $sql = "SELECT f.*, t.numero_turma 
+                FROM formando f
+                JOIN turma t ON f.id_turma = t.id_turma
+                ORDER BY f.id_formando DESC";
         $rs = $con->query($sql);
         $formandos = $rs->fetch_all(MYSQLI_ASSOC);
 
-        // Ajuste para a sua view de listagem/dashboard
-        include __DIR__. '/../view/Admin/dashboard_Admin.php';
+        include __DIR__ . '/../view/Admin/dashboard_Admin.php';
     }
 
-    // Salvar novo formando (Ação do formulário que você enviou)
+    // 👉 MOSTRAR FORMULÁRIO (ISTO FALTAVA)
+    public static function create()
+    {
+        $con = Conexao::ligar();
+
+        $turmas = $con->query("SELECT * FROM turma")->fetch_all(MYSQLI_ASSOC);
+        $formadores = $con->query("SELECT * FROM formador")->fetch_all(MYSQLI_ASSOC);
+
+        include __DIR__ . '/../view/Formando/criar_formando.php';
+    }
+
+    // SALVAR
     public static function store()
     {
         $con = Conexao::ligar();
-        $data = $_POST['data_nascimento'];
 
-        if ($data > date('Y-m-d')) {
-            Session::set('erro', 'A data de nascimento não pode ser futura.');
-            header('Location: ../view/Formando/criar_formando.php'); 
-            exit;
-        }
+        $sql = "INSERT INTO formando 
+                (nome, numero, email, id_formador, id_turma)
+                VALUES (?,?,?,?,?)";
 
-        // Criptografar a senha por segurança
-        $hash = password_hash($_POST['senha'], PASSWORD_DEFAULT);
-
-        // SQL com os campos: nome, genero, data_nascimento, email, telefone, estado, turma, senha
-        $sql = "INSERT INTO formando (nome, genero, data_nascimento, email, telefone, estado, turma, senha) VALUES (?,?,?,?,?,?,?,?)";
-        
         $st = $con->prepare($sql);
-        
-        // 'ssssssss' = 8 strings
-        $st->bind_param('ssssssss', 
-            $_POST['nome'], 
-            $_POST['genero'], 
-            $_POST['data_nascimento'], 
-            $_POST['email'], 
-            $_POST['telefone'], 
-            $_POST['estado'], 
-            $_POST['turma'],
-            $hash
-        );
-
-        if($st->execute()){
-            Session::set('sucesso', 'Formando cadastrado com sucesso!');
-        } else {
-            Session::set('erro', 'Falha ao cadastrar no banco de dados.');
-        }
-
-        header('Location: FormandoController.php?action=index');
-        exit;
-    }
-
-    // Mostrar formulário de edição
-    public static function edit()
-    {
-        $con = Conexao::ligar();
-        $id = (int)($_GET['id'] ?? 0);
-
-        $st = $con->prepare("SELECT * FROM formando WHERE id_formando = ?");
-        $st->bind_param('i', $id);
-        $st->execute();
-        $row = $st->get_result()->fetch_assoc();
-
-        if (!$row) {
-            die('Formando não encontrado');
-        }
-        include __DIR__ . '/../view/Formando/editar_formando.php';
-    }
-
-    // Atualizar dados
-    public static function update()
-    {
-        $con = Conexao::ligar();
-        $id = (int)$_POST['id_formando'];
-
-        $sql = "UPDATE formando SET nome=?, genero=?, data_nascimento=?, email=?, telefone=?, estado=?, turma=? WHERE id_formando=?";
-        $st = $con->prepare($sql);
-        $st->bind_param('sssssssi', 
-            $_POST['nome'], 
-            $_POST['genero'], 
-            $_POST['data_nascimento'], 
-            $_POST['email'], 
-            $_POST['telefone'], 
-            $_POST['estado'], 
-            $_POST['turma'], 
-            $id
+        $st->bind_param(
+            "sisis",
+            $_POST['nome'],
+            $_POST['numero'],
+            $_POST['email'],
+            $_POST['id_formador'],
+            $_POST['id_turma']
         );
         $st->execute();
 
@@ -107,14 +62,14 @@ class FormandoController
         exit;
     }
 
-    // Excluir registro
+    // APAGAR
     public static function destroy()
     {
         $con = Conexao::ligar();
-        $id = (int)($_GET['id'] ?? 0);
+        $id = (int)$_GET['id'];
 
-        $st = $con->prepare("DELETE FROM formando WHERE id_formando = ?");
-        $st->bind_param('i', $id);
+        $st = $con->prepare("DELETE FROM formando WHERE id_formando=?");
+        $st->bind_param("i", $id);
         $st->execute();
 
         header('Location: FormandoController.php?action=index');
@@ -122,7 +77,6 @@ class FormandoController
     }
 }
 
-// Execução dinâmica da ação
 if (method_exists('FormandoController', $action)) {
     FormandoController::$action();
 } else {
